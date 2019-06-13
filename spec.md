@@ -27,7 +27,67 @@ Now that we have determined our collateral will be a function of the transfer's 
 #### disputeWindow
 Dispute window will also be dynamic and set based on the size of the transfer in relation to the total assets held by the bridge. I.e. a transfer withdrawing 10% of the locked assets will take significantly longer than a transfer withdrawing <1%. To avoid sybil attacks on the withdrawals, the amount withdrawn for a given time period will determine the withdrawal times for the tranfers. Such that 10x 1% withdrawals will take as long as 1x 10% withdrawal.
 
-## Functionality
+## Logical Structure for ETH Contract
+```solidity
+contract Bridge {
+
+  uint private validatorCount;
+  uint private pendingWithdrawals;
+  uint private tokensLocked;
+  uint private validatorEarnings;   // Pending payment to validators in tokens
+  uint private baseWithdrawalTime;  // Minimum dispute period for a withdrawal
+  uint private timePerBasis;        // Seconds to wait per basis point withdrawn (0.01%)
+  uint private proposalCount;
+  
+  struct WithdrawalProposal {
+    address   beneficiary;
+    uint      withdrawalAmount;
+    uint      requiredSignatures;
+    boolean   proposed;
+    boolean   confirmed;
+    uint      disputeEnds;
+    address[] signatories;
+  }
+  
+  function getWithdrawalTime(uint _amountToWithdraw) public returns(address[]) {
+    // Returns withdrawal time based on the size of withdrawal and value in pending withdrawals
+  }
+  
+  function proposeWithdrawal(uint _value, address _recipient, uint depositId) public returns(proposalId uint) {
+    // Create new withdrawal proposal
+    // depositId is the id of the deposit on the POA chain
+  }
+  
+  function commitDeposit() public returns(proposalId uint) {
+    // Commit deposit here first before starting withdrawal on foreign chain
+  }
+  
+  function createWithdrawProposal(uint _amount, address _to) private returns(proposalId uint) {
+    // Setup a new proposal and set the required signatures to reach pending status
+  }
+  
+  function signOnWithdrawalProposal(uint _proposalId) public onlyValidator returns() {
+    // Attach a validators signature to a proposal
+    // If the proposal has sufficient signatures, set it to pendign and begin dispute period
+  }
+  
+  function disputePendingWithdrawal(uint proposalId) {
+    // Halt the withdrawal for proposalId
+    // Open voting to resolve dispute for proposalId
+  }
+  
+  function castVoteOnDispute(uint proposalId, boolean approve) {
+    // Attach an affirmative or negative vote to a particular proposalId
+  }
+  
+  function processWithdrawal() {
+    // Require that now > proposalExpiry && proposal is not disputed
+    // Process the withdrawal & reward the processee
+  }
+}
+```
+
+## Functionality for ETH Contract
 ```solidity
 contract Bridge {
 
@@ -57,8 +117,8 @@ contract Bridge {
     uint withdrawalTime = baseWithdrawalTime + (10000 * _pendingWithdrawals / tokensLocked) * timePerBasis;
   }
   
-  function proposeTransfer() public returns(proposalId uint) {
-  
+  function proposeWithdrawal(uint _value, address _recipient) public returns(proposalId uint) {
+    createWithdrawProposal(_value, _recipient);
   }
   
   function createWithdrawProposal(uint _amount, address _to) private returns(proposalId uint) {
